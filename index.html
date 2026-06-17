@@ -323,7 +323,7 @@ html,body {
 
     <div class="controls-pane">
 
-      <div class="form-section">
+      <div class="form-section" id="design-section">
         <label class="form-label">Design Style</label>
         <div class="design-grid" id="design-grid"></div>
       </div>
@@ -433,6 +433,7 @@ const THEMES = [
 // ── STATE ───────────────────────────────────────────────────
 let state = {
   designId: 'sage-garden',
+  lockedDesign: false,
   themeId: 'sage',
   name1: 'Emma Charlotte',
   name2: 'James Oliver',
@@ -464,8 +465,8 @@ let expiresAt = null;
 // ════════════════════════════════════════════════════════════
 
 // Hash function — same algorithm used in link generator
-async function makeHash(expiresStr) {
-  const msg = SECRET + '::' + expiresStr;
+async function makeHash(expiresStr, designId) {
+  const msg = SECRET + '::' + expiresStr + '::' + (designId || '');
   const buf = new TextEncoder().encode(msg);
   const hashBuf = await crypto.subtle.digest('SHA-256', buf);
   const arr = Array.from(new Uint8Array(hashBuf));
@@ -476,6 +477,7 @@ async function checkAccess() {
   const params = new URLSearchParams(window.location.search);
   const key = params.get('key');
   const expires = params.get('expires');
+  const designParam = params.get('design');
 
   // No link parameters → show no-link screen
   if (!key && !expires) {
@@ -483,7 +485,7 @@ async function checkAccess() {
     return false;
   }
 
-  // Missing either parameter → invalid
+  // Missing either required param → invalid
   if (!key || !expires) {
     showScreen('screen-invalid');
     return false;
@@ -495,8 +497,14 @@ async function checkAccess() {
     return false;
   }
 
-  // Validate hash
-  const expectedHash = await makeHash(expires);
+  // Validate design parameter if present
+  if (designParam && !DESIGNS.find(function(d) { return d.id === designParam; })) {
+    showScreen('screen-invalid');
+    return false;
+  }
+
+  // Validate hash — includes design if present
+  const expectedHash = await makeHash(expires, designParam || '');
   if (key !== expectedHash) {
     showScreen('screen-invalid');
     return false;
@@ -516,7 +524,22 @@ async function checkAccess() {
     return false;
   }
 
-  // Valid! Unlock editor
+  // Valid! Lock design if specified
+  if (designParam) {
+    state.designId = designParam;
+    state.lockedDesign = true;
+    // Pre-fill sunset-friendly defaults if locked to sunset
+    if (designParam === 'sunset-coastal') {
+      state.name1 = 'Aelin';
+      state.name2 = 'Rowan';
+      state.surname = '';
+      state.date1 = 'Sunday';
+      state.date2 = '6 PM';
+      state.time = '10';
+      state.venue = 'JANUARY';
+      state.footer = '2027';
+    }
+  }
   expiresAt = expDate;
   showEditor();
   return true;
@@ -533,9 +556,15 @@ function showEditor() {
     .forEach(s => document.getElementById(s).style.display = 'none');
   document.getElementById('editor').classList.add('active');
   updateDaysLeft();
+  // If locked to one design, hide the design selector
+  const designSection = document.getElementById('design-section');
+  if (designSection) {
+    designSection.style.display = state.lockedDesign ? 'none' : 'block';
+  }
   buildDesignGrid();
   buildThemeGrid();
   updateThemeVisibility();
+  updateInputLabels();
   bindInputs();
   drawInvite();
 }
@@ -817,40 +846,37 @@ function drawSunsetCoastal() {
 
 function drawSunsetText(ctx, W, H, CX) {
   // Names — large flowing italic script in cream, bottom-third
-  // (placed where Aelin & Rowan sits in the reference)
   const names = (state.name1 || ' ') + ' & ' + (state.name2 || ' ');
 
-  // Soft dark shadow for legibility
   ctx.save();
   ctx.font = 'italic 150px Lora';
   ctx.textBaseline = 'top';
   const namesW = ctx.measureText(names).width;
   const namesX = CX - namesW / 2;
   const namesY = H * 0.66;
-  // Soft drop shadow
   ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
   ctx.fillText(names, namesX + 5, namesY + 5);
   ctx.fillStyle = '#FFFCF5';
   ctx.fillText(names, namesX, namesY);
   ctx.restore();
 
-  // Date row — 3 columns at the bottom
+  // Date row — 3 columns at the bottom, tighter spacing
   // state.date1 = day of week | state.date2 = time | state.time = day number
   // state.venue = month | state.footer = year
   const dateY = H * 0.84;
-  const col1X = W * 0.30;
+  // Tighter column positions — closer to the centre number
+  const col1X = W * 0.34;   // was 0.30 — closer to centre
   const col2X = W * 0.50;
-  const col3X = W * 0.70;
+  const col3X = W * 0.66;   // was 0.70 — closer to centre
 
   ctx.save();
   ctx.fillStyle = '#FFFCF5';
   ctx.textBaseline = 'top';
 
-  // Column 1: Day of week, Time
-  ctx.font = '50px Lora';
+  // Column 1: Day of week, Time (smaller font for balance)
+  ctx.font = '46px Lora';
   let txt = state.date1 || ' ';
   let tw = ctx.measureText(txt).width;
-  // shadow
   ctx.save();
   ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
   ctx.fillText(txt, col1X - tw/2 + 3, dateY + 3);
@@ -861,9 +887,9 @@ function drawSunsetText(ctx, W, H, CX) {
   tw = ctx.measureText(txt).width;
   ctx.save();
   ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 63);
+  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 58);
   ctx.restore();
-  ctx.fillText(txt, col1X - tw/2, dateY + 60);
+  ctx.fillText(txt, col1X - tw/2, dateY + 55);
 
   // Column 2: Day number (large)
   ctx.font = '110px Lora';
@@ -875,30 +901,27 @@ function drawSunsetText(ctx, W, H, CX) {
   ctx.restore();
   ctx.fillText(txt, col2X - tw/2, dateY - 10);
 
-  // Column 3: Month, Year
-  ctx.font = '46px Lora';
-  txt = (state.venue || ' ').toUpperCase();
-  // Letter-spaced
-  drawSpacedText(ctx, txt, col3X, dateY,
-    '46px Lora', '#FFFCF5', 3, true);
+  // Column 3: Month (spaced caps), Year
+  drawSpacedText(ctx, (state.venue || ' ').toUpperCase(), col3X, dateY,
+    '42px Lora', '#FFFCF5', 3, true);
 
-  ctx.font = '50px Lora';
+  ctx.font = '46px Lora';
   txt = state.footer || ' ';
   tw = ctx.measureText(txt).width;
   ctx.save();
   ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col3X - tw/2 + 3, dateY + 63);
+  ctx.fillText(txt, col3X - tw/2 + 3, dateY + 58);
   ctx.restore();
-  ctx.fillText(txt, col3X - tw/2, dateY + 60);
+  ctx.fillText(txt, col3X - tw/2, dateY + 55);
 
-  // Vertical dividers between columns
+  // Vertical dividers — close to the centre "10", not the side columns
   ctx.strokeStyle = '#FFFCF5';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(col1X + 100, dateY + 5);
-  ctx.lineTo(col1X + 100, dateY + 105);
-  ctx.moveTo(col3X - 100, dateY + 5);
-  ctx.lineTo(col3X - 100, dateY + 105);
+  ctx.moveTo(col2X - 90, dateY + 5);
+  ctx.lineTo(col2X - 90, dateY + 100);
+  ctx.moveTo(col2X + 90, dateY + 5);
+  ctx.lineTo(col2X + 90, dateY + 100);
   ctx.stroke();
 
   ctx.restore();

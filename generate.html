@@ -153,6 +153,13 @@ button:active{opacity:.85}
       <input id="f-order" type="text" placeholder="e.g. 3456789012" maxlength="30">
     </div>
     <div class="field">
+      <label>Design <span style="color:#C46060;font-weight:600">REQUIRED</span></label>
+      <select id="f-design">
+        <option value="sage-garden">Sage Garden (classic editorial)</option>
+        <option value="sunset-coastal">Sunset Coastal (with photo)</option>
+      </select>
+    </div>
+    <div class="field">
       <label>Access duration</label>
       <select id="f-days">
         <option value="30" selected>30 days (standard)</option>
@@ -173,6 +180,7 @@ button:active{opacity:.85}
 
       <div style="margin-top:16px">
         <div class="detail-row"><span class="lbl">Buyer</span><span class="val" id="d-buyer">—</span></div>
+        <div class="detail-row"><span class="lbl">Design</span><span class="val" id="d-design">—</span></div>
         <div class="detail-row"><span class="lbl">Expires</span><span class="val" id="d-expires">—</span></div>
         <div class="detail-row"><span class="lbl">Days valid</span><span class="val" id="d-days">—</span></div>
       </div>
@@ -192,8 +200,8 @@ button:active{opacity:.85}
 // ⚠ MUST MATCH index.html SECRET EXACTLY
 const SECRET = 'aeryn-2026-beautifully-on-purpose';
 
-async function makeHash(expiresStr) {
-  const msg = SECRET + '::' + expiresStr;
+async function makeHash(expiresStr, designId) {
+  const msg = SECRET + '::' + expiresStr + '::' + (designId || '');
   const buf = new TextEncoder().encode(msg);
   const hashBuf = await crypto.subtle.digest('SHA-256', buf);
   const arr = Array.from(new Uint8Array(hashBuf));
@@ -203,11 +211,13 @@ async function makeHash(expiresStr) {
 let lastLink = '';
 
 async function generate() {
-  const buyer = document.getElementById('f-buyer').value.trim();
-  const order = document.getElementById('f-order').value.trim();
-  const days  = parseInt(document.getElementById('f-days').value, 10) || 30;
+  const buyer  = document.getElementById('f-buyer').value.trim();
+  const order  = document.getElementById('f-order').value.trim();
+  const design = document.getElementById('f-design').value;
+  const days   = parseInt(document.getElementById('f-days').value, 10) || 30;
 
   if (!buyer) { showToast('Please enter buyer name'); return; }
+  if (!design) { showToast('Please select a design'); return; }
 
   const exp = new Date();
   exp.setDate(exp.getDate() + days);
@@ -216,24 +226,24 @@ async function generate() {
   const dd   = String(exp.getDate()).padStart(2,'0');
   const expStr = yyyy + '-' + mm + '-' + dd;
 
-  const key = await makeHash(expStr);
-  // Build base URL — include repo path so the link works on GitHub Pages
-  // Strip generate.html from current URL to get the editor's base
+  const key = await makeHash(expStr, design);
   const here = window.location.href.split('?')[0].split('#')[0];
   const base = here.replace(/generate\.html$/, '');
-  const url = base + '?key=' + key + '&expires=' + expStr;
+  const url = base + '?key=' + key + '&expires=' + expStr + '&design=' + design;
   lastLink = url;
 
-  // Save to history
+  // Pretty label for design
+  const designLabel = design === 'sage-garden' ? 'Sage Garden' : 'Sunset Coastal';
+
   const entry = {
-    buyer: buyer, order: order, days: days,
+    buyer: buyer, order: order, days: days, design: designLabel,
     expires: expStr, url: url, created: new Date().toISOString()
   };
   saveHistory(entry);
 
-  // Show result
   document.getElementById('link-out').textContent = url;
   document.getElementById('d-buyer').textContent = buyer + (order ? ' (#' + order + ')' : '');
+  document.getElementById('d-design').textContent = designLabel;
   document.getElementById('d-expires').textContent =
     exp.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
   document.getElementById('d-days').textContent = days + ' days';
@@ -286,9 +296,10 @@ function renderHistory() {
     list.innerHTML = h.map(function(e) {
       const date = new Date(e.created);
       const dateStr = date.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'2-digit' });
+      const designStr = e.design ? ' · ' + e.design : '';
       return '<div class="history-row">' +
         '<div class="info">' +
-          '<div><strong>' + escapeHtml(e.buyer) + '</strong> · expires ' + escapeHtml(e.expires) + '</div>' +
+          '<div><strong>' + escapeHtml(e.buyer) + '</strong>' + escapeHtml(designStr) + ' · expires ' + escapeHtml(e.expires) + '</div>' +
           '<div class="date">Generated ' + dateStr + (e.order ? ' · order #' + escapeHtml(e.order) : '') + '</div>' +
           '<div class="url">' + escapeHtml(e.url.slice(0,60)) + '...</div>' +
         '</div>' +
