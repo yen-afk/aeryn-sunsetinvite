@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Aeryn Studio — Private Link Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital@1&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#FCF8EE; --cream-dk:#F2EADA; --parch:#E6DAC0;
+  --ink:#1C1612; --ink-lt:#4B3E30;
+  --sage:#56764C; --sage-dk:#2C462A;
+  --gold:#A8843C; --gold-lt:#D0B264;
+  --dust:#B9A88A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100dvh;font-family:'Poppins',-apple-system,sans-serif;
+  background:var(--cream);color:var(--ink);padding:24px 18px;
+}
+.container{max-width:580px;margin:0 auto}
+.brand{
+  font-size:11px;font-weight:600;letter-spacing:0.18em;
+  color:var(--gold);text-align:center;margin-bottom:6px;
+}
+h1{
+  font-family:'Lora',serif;font-style:italic;font-size:32px;
+  text-align:center;margin-bottom:6px;color:var(--ink);
+}
+.subtitle{
+  text-align:center;color:var(--ink-lt);font-size:14px;
+  margin-bottom:28px;
+}
+.warn{
+  background:#FFF6E0;border:1px solid var(--gold-lt);
+  border-radius:10px;padding:12px 14px;font-size:13px;
+  color:var(--ink-lt);margin-bottom:22px;line-height:1.55;
+}
+.warn strong{color:var(--ink)}
+.card{
+  background:#fff;border:1px solid var(--parch);
+  border-radius:14px;padding:22px;margin-bottom:18px;
+  position:relative;
+}
+.card::before{
+  content:'';position:absolute;inset:8px;
+  border:1px solid var(--gold);border-radius:8px;
+  pointer-events:none;
+}
+.field{margin-bottom:14px;position:relative;z-index:1}
+label{
+  display:block;font-size:10px;font-weight:600;letter-spacing:0.10em;
+  text-transform:uppercase;color:var(--ink-lt);margin-bottom:6px;
+}
+input,select{
+  width:100%;padding:11px 13px;font-size:16px;
+  font-family:inherit;color:var(--ink);
+  border:1px solid var(--parch);border-radius:8px;
+  background:#FDFAF3;
+}
+input:focus,select:focus{outline:none;border-color:var(--sage)}
+button{
+  width:100%;padding:14px;border:none;border-radius:10px;
+  font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;transition:opacity .15s;
+}
+button:active{opacity:.85}
+.btn-primary{background:var(--sage);color:#fff;margin-top:6px}
+.btn-copy{background:var(--ink);color:#fff;margin-top:12px}
+.btn-secondary{
+  background:#fff;color:var(--ink);
+  border:1px solid var(--parch);margin-top:10px;
+}
+
+.result{display:none}
+.result.show{display:block}
+.result-label{
+  font-size:10px;font-weight:600;letter-spacing:0.10em;
+  text-transform:uppercase;color:var(--ink-lt);margin-bottom:6px;
+}
+.link-box{
+  background:#F8F4EC;border:1px solid var(--parch);
+  border-radius:8px;padding:10px 12px;
+  font-family:monospace;font-size:12px;
+  word-break:break-all;line-height:1.55;color:var(--sage-dk);
+  margin-bottom:8px;
+}
+.detail-row{
+  display:flex;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid var(--parch);
+  font-size:13px;
+}
+.detail-row:last-child{border-bottom:none}
+.detail-row .lbl{color:var(--ink-lt)}
+.detail-row .val{color:var(--ink);font-weight:600}
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:#fff;padding:11px 22px;
+  border-radius:24px;font-size:14px;transition:transform .25s;
+  z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.25);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.history{margin-top:24px}
+.history h3{
+  font-family:'Lora',serif;font-style:italic;font-size:18px;
+  margin-bottom:10px;color:var(--ink);
+}
+.history-row{
+  background:#fff;border:1px solid var(--parch);
+  border-radius:8px;padding:10px 12px;margin-bottom:8px;
+  font-size:12px;display:flex;justify-content:space-between;
+  align-items:center;gap:10px;
+}
+.history-row .info{flex:1;min-width:0}
+.history-row .date{color:var(--ink-lt);font-size:11px}
+.history-row .url{
+  font-family:monospace;color:var(--sage-dk);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:2px;
+}
+.history-row button{
+  width:auto;padding:6px 12px;font-size:12px;
+  background:var(--sage);color:#fff;flex-shrink:0;
+}
+.empty{
+  text-align:center;color:var(--dust);font-size:13px;
+  padding:18px;font-style:italic;
+}
+.danger{
+  background:#fff;color:#C46060;border:1px solid #F5C0C0;
+  margin-top:14px;font-size:13px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">AERYN STUDIO</div>
+  <h1>Link Generator</h1>
+  <div class="subtitle">Generate a 30-day access link for each Etsy buyer.</div>
+
+  <div class="warn">
+    <strong>⚠ Private page — do not share.</strong> Bookmark this page on your phone. Use it after each Etsy sale to generate the link for that buyer's delivery PDF.
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>Buyer name <span style="color:var(--dust);font-weight:400">(for your records)</span></label>
+      <input id="f-buyer" type="text" placeholder="e.g. Sarah Johnson" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Etsy order number <span style="color:var(--dust);font-weight:400">(optional)</span></label>
+      <input id="f-order" type="text" placeholder="e.g. 3456789012" maxlength="30">
+    </div>
+    <div class="field">
+      <label>Access duration</label>
+      <select id="f-days">
+        <option value="30" selected>30 days (standard)</option>
+        <option value="60">60 days</option>
+        <option value="90">90 days</option>
+        <option value="14">14 days</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="generate()">Generate link</button>
+  </div>
+
+  <div class="result" id="result">
+    <div class="card">
+      <div class="result-label">Ready to paste into delivery PDF</div>
+      <div class="link-box" id="link-out"></div>
+      <button class="btn-copy" id="copy-btn" onclick="copyLink()">Copy link</button>
+      <button class="btn-secondary" onclick="testLink()">Test link (opens editor)</button>
+
+      <div style="margin-top:16px">
+        <div class="detail-row"><span class="lbl">Buyer</span><span class="val" id="d-buyer">—</span></div>
+        <div class="detail-row"><span class="lbl">Expires</span><span class="val" id="d-expires">—</span></div>
+        <div class="detail-row"><span class="lbl">Days valid</span><span class="val" id="d-days">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history">
+    <h3>Recent links</h3>
+    <div id="history-list"><div class="empty">No links generated yet</div></div>
+    <button class="btn-secondary danger" onclick="clearHistory()">Clear history</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ⚠ MUST MATCH index.html SECRET EXACTLY
+const SECRET = 'aeryn-2026-beautifully-on-purpose';
+
+async function makeHash(expiresStr) {
+  const msg = SECRET + '::' + expiresStr;
+  const buf = new TextEncoder().encode(msg);
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  const arr = Array.from(new Uint8Array(hashBuf));
+  return arr.map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 12);
+}
+
+let lastLink = '';
+
+async function generate() {
+  const buyer = document.getElementById('f-buyer').value.trim();
+  const order = document.getElementById('f-order').value.trim();
+  const days  = parseInt(document.getElementById('f-days').value, 10) || 30;
+
+  if (!buyer) { showToast('Please enter buyer name'); return; }
+
+  const exp = new Date();
+  exp.setDate(exp.getDate() + days);
+  const yyyy = exp.getFullYear();
+  const mm   = String(exp.getMonth() + 1).padStart(2,'0');
+  const dd   = String(exp.getDate()).padStart(2,'0');
+  const expStr = yyyy + '-' + mm + '-' + dd;
+
+  const key = await makeHash(expStr);
+  // Build base URL — include repo path so the link works on GitHub Pages
+  // Strip generate.html from current URL to get the editor's base
+  const here = window.location.href.split('?')[0].split('#')[0];
+  const base = here.replace(/generate\.html$/, '');
+  const url = base + '?key=' + key + '&expires=' + expStr;
+  lastLink = url;
+
+  // Save to history
+  const entry = {
+    buyer: buyer, order: order, days: days,
+    expires: expStr, url: url, created: new Date().toISOString()
+  };
+  saveHistory(entry);
+
+  // Show result
+  document.getElementById('link-out').textContent = url;
+  document.getElementById('d-buyer').textContent = buyer + (order ? ' (#' + order + ')' : '');
+  document.getElementById('d-expires').textContent =
+    exp.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('d-days').textContent = days + ' days';
+  document.getElementById('result').classList.add('show');
+  document.getElementById('result').scrollIntoView({behavior:'smooth', block:'start'});
+  renderHistory();
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(lastLink)
+    .then(function() { showToast('Link copied!'); })
+    .catch(function() {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = lastLink;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Link copied!');
+      } catch (e) {
+        showToast('Could not copy — please select manually');
+      }
+      document.body.removeChild(ta);
+    });
+}
+
+function testLink() {
+  window.open(lastLink, '_blank');
+}
+
+function saveHistory(entry) {
+  try {
+    const h = JSON.parse(localStorage.getItem('aeryn-links') || '[]');
+    h.unshift(entry);
+    // Keep only last 50
+    if (h.length > 50) h.length = 50;
+    localStorage.setItem('aeryn-links', JSON.stringify(h));
+  } catch (e) { console.error(e); }
+}
+
+function renderHistory() {
+  try {
+    const h = JSON.parse(localStorage.getItem('aeryn-links') || '[]');
+    const list = document.getElementById('history-list');
+    if (h.length === 0) {
+      list.innerHTML = '<div class="empty">No links generated yet</div>';
+      return;
+    }
+    list.innerHTML = h.map(function(e) {
+      const date = new Date(e.created);
+      const dateStr = date.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'2-digit' });
+      return '<div class="history-row">' +
+        '<div class="info">' +
+          '<div><strong>' + escapeHtml(e.buyer) + '</strong> · expires ' + escapeHtml(e.expires) + '</div>' +
+          '<div class="date">Generated ' + dateStr + (e.order ? ' · order #' + escapeHtml(e.order) : '') + '</div>' +
+          '<div class="url">' + escapeHtml(e.url.slice(0,60)) + '...</div>' +
+        '</div>' +
+        '<button onclick="copyHistoryLink(\'' + encodeURIComponent(e.url) + '\')">Copy</button>' +
+      '</div>';
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+
+function copyHistoryLink(encoded) {
+  const url = decodeURIComponent(encoded);
+  navigator.clipboard.writeText(url)
+    .then(function() { showToast('Link copied!'); })
+    .catch(function() { showToast('Copy failed'); });
+}
+
+function clearHistory() {
+  if (confirm('Clear all link history?')) {
+    localStorage.removeItem('aeryn-links');
+    renderHistory();
+    showToast('History cleared');
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2400);
+}
+
+renderHistory();
+</script>
+</body>
+</html>

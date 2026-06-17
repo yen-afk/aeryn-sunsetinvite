@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#56764C">
+<title>Aeryn Studio — Invite Editor</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #FCF8EE;
+  --cream-dk: #F2EADA;
+  --parch: #E6DAC0;
+  --ink: #1C1612;
+  --ink-lt: #4B3E30;
+  --sage: #56764C;
+  --sage-lt: #9BB98A;
+  --sage-dk: #2C462A;
+  --gold: #A8843C;
+  --gold-lt: #D0B264;
+  --dust: #B9A88A;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body {
+  min-height:100%; min-height:100dvh;
+  font-family:'Poppins',-apple-system,sans-serif;
+  background:var(--cream); color:var(--ink);
+  font-size:16px;
+}
+
+/* ── ACCESS SCREEN ──────────────────────────── */
+.access-screen {
+  min-height:100dvh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:calc(var(--safe-top) + 24px) 20px calc(var(--safe-bot) + 24px);
+  text-align:center; background:var(--cream);
+}
+.access-card {
+  max-width:440px; width:100%;
+  background:#fff; border:1px solid var(--parch);
+  border-radius:18px; padding:34px 24px;
+  position:relative;
+}
+.access-card::before {
+  content:''; position:absolute; inset:8px;
+  border:1px solid var(--gold); border-radius:12px;
+  pointer-events:none;
+}
+.aeryn-brand {
+  font-family:'Poppins',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:0.18em; color:var(--gold); margin-bottom:10px;
+}
+.access-title {
+  font-family:'Lora',serif; font-style:italic;
+  font-size:32px; line-height:1.2; color:var(--ink);
+  margin-bottom:8px;
+}
+.access-sub {
+  font-size:14px; color:var(--ink-lt); line-height:1.6;
+  margin-bottom:20px; padding:0 4px;
+}
+.btn-primary {
+  display:inline-block; background:var(--sage); color:#fff;
+  font-family:'Poppins',sans-serif; font-size:15px; font-weight:600;
+  padding:13px 28px; border:none; border-radius:10px;
+  cursor:pointer; text-decoration:none; transition:opacity .15s;
+}
+.btn-primary:active { opacity:.85; }
+.access-icon {
+  width:56px; height:56px; border-radius:50%;
+  background:var(--cream-dk); display:flex; align-items:center;
+  justify-content:center; margin:0 auto 14px; font-size:28px;
+}
+.expired-icon { background:#FBE2E2; }
+.days-left {
+  display:inline-block; background:var(--sage); color:#fff;
+  padding:5px 14px; border-radius:20px; font-size:12px;
+  font-weight:600; letter-spacing:0.04em; margin-bottom:14px;
+}
+
+/* ── EDITOR ─────────────────────────────────── */
+.editor {
+  display:none; min-height:100dvh;
+  padding-top:calc(var(--safe-top) + 0px);
+  padding-bottom:calc(var(--safe-bot) + 0px);
+}
+.editor.active { display:flex; flex-direction:column; }
+
+.editor-header {
+  background:var(--cream-dk);
+  border-bottom:1px solid var(--parch);
+  padding:14px 18px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px;
+}
+.editor-header-left {
+  display:flex; flex-direction:column;
+}
+.editor-brand {
+  font-size:10px; font-weight:600; letter-spacing:0.14em;
+  color:var(--gold); text-transform:uppercase;
+}
+.editor-title {
+  font-family:'Lora',serif; font-style:italic; font-size:18px;
+  color:var(--ink);
+}
+.editor-days {
+  font-size:11px; color:var(--ink-lt);
+  background:#fff; padding:6px 10px; border-radius:14px;
+  border:1px solid var(--parch); white-space:nowrap;
+}
+.editor-days.warn { color:#C46060; border-color:#F5C0C0; background:#FFF6F6; }
+
+/* Editor body */
+.editor-body {
+  flex:1; display:flex; flex-direction:column;
+  overflow:hidden;
+}
+@media (min-width:900px) {
+  .editor-body { flex-direction:row; }
+}
+
+.preview-pane {
+  flex:1; background:var(--cream-dk);
+  padding:20px; overflow-y:auto;
+  display:flex; align-items:flex-start; justify-content:center;
+}
+.controls-pane {
+  background:#fff; border-top:1px solid var(--parch);
+  padding:16px 18px calc(var(--safe-bot) + 18px);
+  max-height:50dvh; overflow-y:auto;
+}
+@media (min-width:900px) {
+  .controls-pane {
+    border-top:none; border-left:1px solid var(--parch);
+    width:340px; max-height:none; flex-shrink:0;
+  }
+}
+
+/* Invite card preview */
+.invite-wrap {
+  width:100%; max-width:500px;
+  aspect-ratio: 5 / 7;
+  background:#fff;
+  box-shadow:0 4px 20px rgba(0,0,0,0.10);
+  border-radius:6px;
+  overflow:hidden;
+  position:relative;
+}
+.invite-canvas {
+  width:100%; height:100%; display:block;
+}
+
+/* Form controls */
+.form-section {
+  margin-bottom:18px;
+}
+.form-label {
+  display:block; font-size:10px; font-weight:600;
+  letter-spacing:0.10em; text-transform:uppercase;
+  color:var(--ink-lt); margin-bottom:6px;
+}
+.form-input {
+  width:100%; padding:10px 12px; font-size:16px;
+  font-family:inherit; color:var(--ink);
+  border:1px solid var(--parch); border-radius:8px;
+  background:#FDFAF3;
+}
+.form-input:focus { outline:none; border-color:var(--sage); }
+
+/* Theme picker */
+.theme-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+}
+.theme-swatch {
+  aspect-ratio:1; border-radius:8px; cursor:pointer;
+  border:2px solid transparent; transition:all .15s;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; color:#fff; font-weight:600;
+  text-align:center; padding:4px;
+}
+.theme-swatch.sel { border-color:var(--ink); transform:scale(1.05); }
+
+/* Design picker */
+.design-grid {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:10px;
+}
+.design-card {
+  aspect-ratio: 5/7; border-radius:8px; cursor:pointer;
+  border:2px solid transparent; transition:all .15s;
+  position:relative; overflow:hidden;
+  background:var(--cream-dk);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.design-card.sel { border-color:var(--ink); transform:scale(1.03); }
+.design-card .design-label {
+  width:100%; padding:6px 4px;
+  background:rgba(0,0,0,0.55); color:#fff;
+  font-size:11px; font-weight:600; text-align:center;
+}
+.design-card .design-preview {
+  position:absolute; inset:0;
+  background-size:cover; background-position:center;
+}
+#theme-section.hidden { display:none; }
+
+/* Download button */
+.btn-download {
+  width:100%; padding:14px; margin-top:10px;
+  background:var(--ink); color:#fff;
+  border:none; border-radius:10px;
+  font-family:'Poppins',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; transition:opacity .15s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-download:active { opacity:.85; }
+.btn-download:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--ink); color:#fff;
+  padding:11px 22px; border-radius:24px;
+  font-size:14px; transition:transform .25s;
+  z-index:100; box-shadow:0 4px 16px rgba(0,0,0,0.25);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* Loading */
+.loading {
+  display:none; position:fixed; inset:0;
+  background:rgba(252,248,238,0.92); z-index:200;
+  align-items:center; justify-content:center;
+}
+.loading.show { display:flex; }
+.loading-spinner {
+  width:40px; height:40px;
+  border:3px solid var(--parch);
+  border-top-color:var(--sage);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ═══ ACCESS SCREENS ═══════════════════════ -->
+<div id="screen-checking" class="access-screen">
+  <div class="access-card">
+    <div class="access-icon">🔍</div>
+    <div class="access-title">Checking your access...</div>
+    <div class="access-sub">One moment please.</div>
+  </div>
+</div>
+
+<div id="screen-no-link" class="access-screen" style="display:none">
+  <div class="access-card">
+    <div class="aeryn-brand">AERYN STUDIO</div>
+    <div class="access-icon">✉</div>
+    <div class="access-title">Welcome to your invite editor</div>
+    <div class="access-sub">
+      To access your personal invite editor, please open the unique link from your Etsy purchase delivery PDF.<br><br>
+      The link will look like:<br>
+      <span style="font-family:monospace;font-size:12px;color:var(--sage);">aeryn-invites.netlify.app/?key=...</span>
+    </div>
+    <a class="btn-primary" href="https://aerynstudio.etsy.com" target="_blank">Visit Aeryn Studio</a>
+  </div>
+</div>
+
+<div id="screen-invalid" class="access-screen" style="display:none">
+  <div class="access-card">
+    <div class="aeryn-brand">AERYN STUDIO</div>
+    <div class="access-icon expired-icon">⚠️</div>
+    <div class="access-title">Invalid access link</div>
+    <div class="access-sub">
+      This link does not appear to be valid.<br><br>
+      Please check your Aeryn Studio delivery PDF and try again, or contact us through Etsy.
+    </div>
+    <a class="btn-primary" href="https://aerynstudio.etsy.com" target="_blank">Get a new template</a>
+  </div>
+</div>
+
+<div id="screen-expired" class="access-screen" style="display:none">
+  <div class="access-card">
+    <div class="aeryn-brand">AERYN STUDIO</div>
+    <div class="access-icon expired-icon">⏳</div>
+    <div class="access-title">Your access has expired</div>
+    <div class="access-sub">
+      Your 30 days of editor access ended on <span id="expired-date" style="color:var(--ink);font-weight:600">—</span>.<br><br>
+      Purchase a new template from Aeryn Studio to continue editing.
+    </div>
+    <a class="btn-primary" href="https://aerynstudio.etsy.com" target="_blank">Visit shop</a>
+  </div>
+</div>
+
+<!-- ═══ EDITOR ═══════════════════════════════ -->
+<div id="editor" class="editor">
+
+  <div class="editor-header">
+    <div class="editor-header-left">
+      <div class="editor-brand">Aeryn Studio</div>
+      <div class="editor-title">Invite Editor</div>
+    </div>
+    <div class="editor-days" id="days-left">Loading...</div>
+  </div>
+
+  <div class="editor-body">
+
+    <div class="preview-pane">
+      <div class="invite-wrap">
+        <canvas id="invite-canvas" class="invite-canvas" width="1500" height="2100"></canvas>
+      </div>
+    </div>
+
+    <div class="controls-pane">
+
+      <div class="form-section">
+        <label class="form-label">Design Style</label>
+        <div class="design-grid" id="design-grid"></div>
+      </div>
+
+      <div class="form-section" id="theme-section">
+        <label class="form-label">Colour Theme</label>
+        <div class="theme-grid" id="theme-grid"></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">First name</label>
+        <input class="form-input" id="f-name1" type="text" placeholder="Emma Charlotte" maxlength="30">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Second name</label>
+        <input class="form-input" id="f-name2" type="text" placeholder="James Oliver" maxlength="30">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Family surname</label>
+        <input class="form-input" id="f-surname" type="text" placeholder="Hardy" maxlength="30">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Date line 1</label>
+        <input class="form-input" id="f-date1" type="text" placeholder="Saturday, the fourteenth of June" maxlength="50">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Date line 2</label>
+        <input class="form-input" id="f-date2" type="text" placeholder="two thousand and twenty-six" maxlength="50">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Time</label>
+        <input class="form-input" id="f-time" type="text" placeholder="Half past three in the afternoon" maxlength="50">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Venue name</label>
+        <input class="form-input" id="f-venue" type="text" placeholder="ELMWOOD MANOR, SURREY" maxlength="40">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Footer line</label>
+        <input class="form-input" id="f-footer" type="text" placeholder="Reception and supper to follow" maxlength="40">
+      </div>
+
+      <button class="btn-download" id="dl-btn" onclick="downloadInvite()">
+        ↓ Download High-Res PNG
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// AERYN INVITE EDITOR
+// URL-based access control + canvas-rendered invitation
+// ════════════════════════════════════════════════════════════
+
+// ── SECRET KEY (only you and the app know this) ─────────────
+const SECRET = 'aeryn-2026-beautifully-on-purpose';
+
+// ── DESIGN STYLES ───────────────────────────────────────────
+const DESIGNS = [
+  { id:'sage-garden',    name:'Sage Garden',    type:'theme' },
+  { id:'sunset-coastal', name:'Sunset Coastal', type:'photo', bg:'sunset-bg.jpg' },
+];
+
+// ── COLOUR THEMES ───────────────────────────────────────────
+const THEMES = [
+  { id:'sage',     name:'Sage Garden',
+    bg:'#FCF8EE', accent:'#56764C', accent2:'#9BB98A', gold:'#A8843C',
+    ink:'#1C1612', inkLt:'#4B3E30', dust:'#B9A88A' },
+  { id:'gold',     name:'Gold & Ivory',
+    bg:'#FFFAEC', accent:'#A8843C', accent2:'#D0B264', gold:'#A8843C',
+    ink:'#3A2A0E', inkLt:'#6A5230', dust:'#C0A878' },
+  { id:'burgundy', name:'Burgundy',
+    bg:'#FCF6F4', accent:'#8B2040', accent2:'#C46472', gold:'#A8843C',
+    ink:'#2C0A18', inkLt:'#6A3040', dust:'#C09098' },
+  { id:'terra',    name:'Terracotta',
+    bg:'#FDF6F0', accent:'#B05838', accent2:'#E0B898', gold:'#A8843C',
+    ink:'#3A1808', inkLt:'#7A4828', dust:'#D0A888' },
+  { id:'mocha',    name:'Mocha',
+    bg:'#FAF6EE', accent:'#8B6A50', accent2:'#D4BBA0', gold:'#A8843C',
+    ink:'#2C1C0E', inkLt:'#6A4830', dust:'#C8A888' },
+  { id:'navy',     name:'Navy',
+    bg:'#F4F6FA', accent:'#243248', accent2:'#7088A8', gold:'#A8843C',
+    ink:'#0A1428', inkLt:'#384868', dust:'#A0B0C0' },
+  { id:'lavender', name:'Lavender',
+    bg:'#F8F4FC', accent:'#7860A8', accent2:'#C0A8E0', gold:'#A8843C',
+    ink:'#1C0E2C', inkLt:'#483868', dust:'#B0A0C8' },
+  { id:'dusty-blue',name:'Dusty Blue',
+    bg:'#F4F8FA', accent:'#4A88B8', accent2:'#A8C8E0', gold:'#A8843C',
+    ink:'#0A2840', inkLt:'#386878', dust:'#A0B8C8' },
+];
+
+// ── STATE ───────────────────────────────────────────────────
+let state = {
+  designId: 'sage-garden',
+  themeId: 'sage',
+  name1: 'Emma Charlotte',
+  name2: 'James Oliver',
+  surname: 'Hardy',
+  date1: 'Saturday, the fourteenth of June',
+  date2: 'two thousand and twenty-six',
+  time: 'Half past three in the afternoon',
+  venue: 'ELMWOOD MANOR, SURREY',
+  footer: 'Reception and supper to follow',
+};
+
+// ── IMAGE CACHE FOR PHOTO BACKGROUNDS ───────────────────────
+const bgImageCache = {};
+function loadBgImage(src) {
+  return new Promise(function(resolve, reject) {
+    if (bgImageCache[src]) { resolve(bgImageCache[src]); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() { bgImageCache[src] = img; resolve(img); };
+    img.onerror = function() { reject(new Error('Image load failed: ' + src)); };
+    img.src = src;
+  });
+}
+
+let expiresAt = null;
+
+// ════════════════════════════════════════════════════════════
+// URL ACCESS CONTROL
+// ════════════════════════════════════════════════════════════
+
+// Hash function — same algorithm used in link generator
+async function makeHash(expiresStr) {
+  const msg = SECRET + '::' + expiresStr;
+  const buf = new TextEncoder().encode(msg);
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  const arr = Array.from(new Uint8Array(hashBuf));
+  return arr.map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 12);
+}
+
+async function checkAccess() {
+  const params = new URLSearchParams(window.location.search);
+  const key = params.get('key');
+  const expires = params.get('expires');
+
+  // No link parameters → show no-link screen
+  if (!key && !expires) {
+    showScreen('screen-no-link');
+    return false;
+  }
+
+  // Missing either parameter → invalid
+  if (!key || !expires) {
+    showScreen('screen-invalid');
+    return false;
+  }
+
+  // Validate expires format (YYYY-MM-DD)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+    showScreen('screen-invalid');
+    return false;
+  }
+
+  // Validate hash
+  const expectedHash = await makeHash(expires);
+  if (key !== expectedHash) {
+    showScreen('screen-invalid');
+    return false;
+  }
+
+  // Check expiry
+  const expDate = new Date(expires + 'T23:59:59');
+  if (isNaN(expDate.getTime())) {
+    showScreen('screen-invalid');
+    return false;
+  }
+  const today = new Date();
+  if (today > expDate) {
+    document.getElementById('expired-date').textContent =
+      expDate.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    showScreen('screen-expired');
+    return false;
+  }
+
+  // Valid! Unlock editor
+  expiresAt = expDate;
+  showEditor();
+  return true;
+}
+
+function showScreen(id) {
+  ['screen-checking','screen-no-link','screen-invalid','screen-expired']
+    .forEach(s => document.getElementById(s).style.display = (s===id?'flex':'none'));
+  document.getElementById('editor').classList.remove('active');
+}
+
+function showEditor() {
+  ['screen-checking','screen-no-link','screen-invalid','screen-expired']
+    .forEach(s => document.getElementById(s).style.display = 'none');
+  document.getElementById('editor').classList.add('active');
+  updateDaysLeft();
+  buildDesignGrid();
+  buildThemeGrid();
+  updateThemeVisibility();
+  bindInputs();
+  drawInvite();
+}
+
+function updateDaysLeft() {
+  if (!expiresAt) return;
+  const now = new Date();
+  const days = Math.ceil((expiresAt - now) / (1000*60*60*24));
+  const el = document.getElementById('days-left');
+  if (days <= 3) {
+    el.classList.add('warn');
+    el.textContent = days === 1 ? '1 day remaining' : days + ' days remaining';
+  } else {
+    el.classList.remove('warn');
+    el.textContent = days + ' days remaining';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// DESIGN GRID
+// ════════════════════════════════════════════════════════════
+function buildDesignGrid() {
+  const grid = document.getElementById('design-grid');
+  if (!grid) return;
+  grid.innerHTML = DESIGNS.map(function(d) {
+    const sel = d.id === state.designId;
+    let bg;
+    if (d.type === 'photo') {
+      bg = "background-image:url('" + d.bg + "'); background-size:cover; background-position:center;";
+    } else {
+      // Sage Garden — show sage tone preview
+      bg = "background:linear-gradient(135deg,#FCF8EE 0%,#E6DAC0 50%,#9BB98A 100%);";
+    }
+    return '<div class="design-card' + (sel?' sel':'') +
+           '" data-id="' + d.id + '" style="' + bg + '">' +
+           '<div class="design-label">' + d.name + '</div></div>';
+  }).join('');
+  Array.from(grid.children).forEach(function(el) {
+    el.addEventListener('click', function() {
+      state.designId = el.dataset.id;
+      // Set sensible defaults for sunset design
+      if (state.designId === 'sunset-coastal' && state.name1 === 'Emma Charlotte') {
+        state.name1 = 'Aelin';
+        state.name2 = 'Rowan';
+        state.surname = '';
+        state.date1 = 'Sunday';
+        state.date2 = '6 PM';
+        state.time = '10';
+        state.venue = 'JANUARY';
+        state.footer = '2027';
+        bindInputs();
+      } else if (state.designId === 'sage-garden' && state.name1 === 'Aelin') {
+        state.name1 = 'Emma Charlotte';
+        state.name2 = 'James Oliver';
+        state.surname = 'Hardy';
+        state.date1 = 'Saturday, the fourteenth of June';
+        state.date2 = 'two thousand and twenty-six';
+        state.time = 'Half past three in the afternoon';
+        state.venue = 'ELMWOOD MANOR, SURREY';
+        state.footer = 'Reception and supper to follow';
+        bindInputs();
+      }
+      buildDesignGrid();
+      updateThemeVisibility();
+      updateInputLabels();
+      drawInvite();
+    });
+  });
+}
+
+function updateThemeVisibility() {
+  // Hide colour theme picker for photo-based designs
+  const design = DESIGNS.find(function(d) { return d.id === state.designId; });
+  const themeSection = document.getElementById('theme-section');
+  if (!themeSection) return;
+  if (design && design.type === 'photo') {
+    themeSection.classList.add('hidden');
+  } else {
+    themeSection.classList.remove('hidden');
+  }
+}
+
+function updateInputLabels() {
+  // For sunset design, relabel fields to match its layout
+  const isSunset = state.designId === 'sunset-coastal';
+  const labels = {
+    'name1':   isSunset ? 'First name'        : 'First name',
+    'name2':   isSunset ? 'Second name'       : 'Second name',
+    'surname': isSunset ? 'Surname (optional)': 'Family surname',
+    'date1':   isSunset ? 'Day of week'       : 'Date line 1',
+    'date2':   isSunset ? 'Time'              : 'Date line 2',
+    'time':    isSunset ? 'Day number'        : 'Time',
+    'venue':   isSunset ? 'Month'             : 'Venue name',
+    'footer':  isSunset ? 'Year'              : 'Footer line',
+  };
+  Object.keys(labels).forEach(function(f) {
+    const inp = document.getElementById('f-' + f);
+    if (!inp) return;
+    const lbl = inp.parentElement.querySelector('.form-label');
+    if (lbl) lbl.textContent = labels[f];
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// THEME GRID
+// ════════════════════════════════════════════════════════════
+function buildThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  grid.innerHTML = THEMES.map(function(t) {
+    const sel = t.id === state.themeId;
+    return '<div class="theme-swatch' + (sel?' sel':'') +
+           '" data-id="' + t.id + '" style="background:' + t.accent + '">' +
+           t.name + '</div>';
+  }).join('');
+  Array.from(grid.children).forEach(function(el) {
+    el.addEventListener('click', function() {
+      state.themeId = el.dataset.id;
+      buildThemeGrid();
+      drawInvite();
+    });
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// INPUTS
+// ════════════════════════════════════════════════════════════
+function bindInputs() {
+  const fields = ['name1','name2','surname','date1','date2','time','venue','footer'];
+  fields.forEach(function(f) {
+    const el = document.getElementById('f-' + f);
+    if (!el) return;
+    el.value = state[f];
+    el.addEventListener('input', function() {
+      state[f] = el.value;
+      drawInvite();
+    });
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// CANVAS RENDERING
+// ════════════════════════════════════════════════════════════
+function drawInvite() {
+  const design = DESIGNS.find(function(d) { return d.id === state.designId; }) || DESIGNS[0];
+  if (design.type === 'photo') {
+    drawSunsetCoastal();
+  } else {
+    drawSageGarden();
+  }
+}
+
+function drawSageGarden() {
+  const canvas = document.getElementById('invite-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const theme = THEMES.find(function(t) { return t.id === state.themeId; }) || THEMES[0];
+
+  // Background
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Linen texture
+  ctx.fillStyle = 'rgba(0,0,0,0.012)';
+  for (let y = 0; y < H; y += 5) {
+    ctx.fillRect(0, y, W, 1);
+  }
+
+  // Outer border
+  const pad = 44, pad2 = pad + 14;
+  ctx.strokeStyle = theme.dust;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad, pad, W - pad*2, H - pad*2);
+  ctx.strokeStyle = theme.gold;
+  ctx.strokeRect(pad2, pad2, W - pad2*2, H - pad2*2);
+
+  // Corner diamonds
+  ctx.fillStyle = theme.gold;
+  [[pad2,pad2],[W-pad2,pad2],[pad2,H-pad2],[W-pad2,H-pad2]].forEach(function(p) {
+    drawDiamond(ctx, p[0], p[1], 10);
+  });
+
+  // Botanical corners
+  drawBotanical(ctx, pad2 + 6, pad2 + 6, 1, 1, theme);
+  drawBotanical(ctx, W - pad2 - 6, pad2 + 6, -1, 1, theme);
+  drawBotanical(ctx, pad2 + 6, H - pad2 - 6, 1, -1, theme);
+  drawBotanical(ctx, W - pad2 - 6, H - pad2 - 6, -1, -1, theme);
+
+  // Content
+  let y = pad2 + 230;
+  const CX = W / 2;
+
+  drawSpacedText(ctx, 'TOGETHER WITH THEIR FAMILIES', CX, y,
+    'bold 22px Poppins', theme.dust, 4);
+  y += 42;
+
+  drawLine(ctx, CX - 180, y, CX + 180, y, theme.dust, 1);
+  y += 26;
+
+  drawCenterText(ctx, 'request the honour of your presence', CX, y,
+    'italic 40px Lora', theme.inkLt);
+  y += 60;
+
+  drawCenterText(ctx, 'at the marriage of', CX, y,
+    'italic 38px Lora', theme.inkLt);
+  y += 78;
+
+  // HERO names
+  drawCenterText(ctx, state.name1 || ' ', CX, y,
+    'italic 120px Lora', theme.ink);
+  y += 128;
+
+  drawCenterText(ctx, '&', CX, y, 'italic 80px Lora', theme.gold);
+  y += 98;
+
+  drawCenterText(ctx, state.name2 || ' ', CX, y,
+    'italic 120px Lora', theme.ink);
+  y += 140;
+
+  if (state.surname && state.surname.trim()) {
+    drawCenterText(ctx, state.surname, CX, y,
+      'italic 56px Lora', theme.inkLt);
+    y += 90;
+  } else {
+    y += 30;
+  }
+
+  // Ornament rule
+  drawOrnamentRule(ctx, CX, y, 480, theme.gold);
+  y += 44;
+
+  drawCenterText(ctx, state.date1 || ' ', CX, y,
+    'italic 40px Lora', theme.ink);
+  y += 52;
+
+  drawCenterText(ctx, state.date2 || ' ', CX, y,
+    'italic 38px Lora', theme.inkLt);
+  y += 56;
+
+  drawLine(ctx, CX - 140, y, CX + 140, y, theme.dust, 1);
+  y += 30;
+
+  drawCenterText(ctx, state.time || ' ', CX, y,
+    'italic 38px Lora', theme.inkLt);
+  y += 56;
+
+  drawSpacedText(ctx, state.venue || ' ', CX, y,
+    'bold 24px Poppins', theme.ink, 4);
+  y += 40;
+
+  drawCenterText(ctx, state.footer || ' ', CX, y,
+    'italic 34px Lora', theme.dust);
+}
+
+// ════════════════════════════════════════════════════════════
+// SUNSET COASTAL DESIGN
+// Buyer's photo as fixed background, editable text overlay
+// ════════════════════════════════════════════════════════════
+function drawSunsetCoastal() {
+  const canvas = document.getElementById('invite-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const CX = W / 2;
+
+  // Fill warm placeholder while image loads
+  ctx.fillStyle = '#E5C291';
+  ctx.fillRect(0, 0, W, H);
+
+  // Load and draw the photo background, then overlay text
+  loadBgImage('sunset-bg.jpg').then(function(bgImg) {
+    // Draw background — cover the whole canvas
+    ctx.drawImage(bgImg, 0, 0, W, H);
+    // Now overlay the editable text
+    drawSunsetText(ctx, W, H, CX);
+  }).catch(function(err) {
+    console.warn('Sunset bg failed, drawing text only', err);
+    drawSunsetText(ctx, W, H, CX);
+  });
+}
+
+function drawSunsetText(ctx, W, H, CX) {
+  // Names — large flowing italic script in cream, bottom-third
+  // (placed where Aelin & Rowan sits in the reference)
+  const names = (state.name1 || ' ') + ' & ' + (state.name2 || ' ');
+
+  // Soft dark shadow for legibility
+  ctx.save();
+  ctx.font = 'italic 150px Lora';
+  ctx.textBaseline = 'top';
+  const namesW = ctx.measureText(names).width;
+  const namesX = CX - namesW / 2;
+  const namesY = H * 0.66;
+  // Soft drop shadow
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(names, namesX + 5, namesY + 5);
+  ctx.fillStyle = '#FFFCF5';
+  ctx.fillText(names, namesX, namesY);
+  ctx.restore();
+
+  // Date row — 3 columns at the bottom
+  // state.date1 = day of week | state.date2 = time | state.time = day number
+  // state.venue = month | state.footer = year
+  const dateY = H * 0.84;
+  const col1X = W * 0.30;
+  const col2X = W * 0.50;
+  const col3X = W * 0.70;
+
+  ctx.save();
+  ctx.fillStyle = '#FFFCF5';
+  ctx.textBaseline = 'top';
+
+  // Column 1: Day of week, Time
+  ctx.font = '50px Lora';
+  let txt = state.date1 || ' ';
+  let tw = ctx.measureText(txt).width;
+  // shadow
+  ctx.save();
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 3);
+  ctx.restore();
+  ctx.fillText(txt, col1X - tw/2, dateY);
+
+  txt = state.date2 || ' ';
+  tw = ctx.measureText(txt).width;
+  ctx.save();
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 63);
+  ctx.restore();
+  ctx.fillText(txt, col1X - tw/2, dateY + 60);
+
+  // Column 2: Day number (large)
+  ctx.font = '110px Lora';
+  txt = state.time || ' ';
+  tw = ctx.measureText(txt).width;
+  ctx.save();
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(txt, col2X - tw/2 + 4, dateY - 7);
+  ctx.restore();
+  ctx.fillText(txt, col2X - tw/2, dateY - 10);
+
+  // Column 3: Month, Year
+  ctx.font = '46px Lora';
+  txt = (state.venue || ' ').toUpperCase();
+  // Letter-spaced
+  drawSpacedText(ctx, txt, col3X, dateY,
+    '46px Lora', '#FFFCF5', 3, true);
+
+  ctx.font = '50px Lora';
+  txt = state.footer || ' ';
+  tw = ctx.measureText(txt).width;
+  ctx.save();
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(txt, col3X - tw/2 + 3, dateY + 63);
+  ctx.restore();
+  ctx.fillText(txt, col3X - tw/2, dateY + 60);
+
+  // Vertical dividers between columns
+  ctx.strokeStyle = '#FFFCF5';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(col1X + 100, dateY + 5);
+  ctx.lineTo(col1X + 100, dateY + 105);
+  ctx.moveTo(col3X - 100, dateY + 5);
+  ctx.lineTo(col3X - 100, dateY + 105);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ── DRAWING HELPERS ─────────────────────────────────────────
+function drawDiamond(ctx, x, y, s) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - s);
+  ctx.lineTo(x + s, y);
+  ctx.lineTo(x, y + s);
+  ctx.lineTo(x - s, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawLine(ctx, x1, y1, x2, y2, col, thick) {
+  ctx.strokeStyle = col;
+  ctx.lineWidth = thick;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+function drawCenterText(ctx, text, x, y, font, col) {
+  ctx.font = font;
+  ctx.fillStyle = col;
+  ctx.textBaseline = 'top';
+  const tw = ctx.measureText(text).width;
+  ctx.fillText(text, x - tw/2, y);
+}
+
+function drawSpacedText(ctx, text, x, y, font, col, spc, withShadow) {
+  ctx.font = font;
+  ctx.textBaseline = 'top';
+  const chars = text.split('');
+  const widths = chars.map(function(c) { return ctx.measureText(c).width; });
+  const total = widths.reduce(function(a,b) { return a+b; }, 0) + spc * (chars.length-1);
+  let cx0 = x - total/2;
+  if (withShadow) {
+    ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+    let sx = cx0;
+    chars.forEach(function(c, i) {
+      ctx.fillText(c, sx + 3, y + 3);
+      sx += widths[i] + spc;
+    });
+  }
+  ctx.fillStyle = col;
+  let cx = cx0;
+  chars.forEach(function(c, i) {
+    ctx.fillText(c, cx, y);
+    cx += widths[i] + spc;
+  });
+}
+
+function drawOrnamentRule(ctx, x, y, w, col) {
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x - w/2, y); ctx.lineTo(x - 22, y);
+  ctx.moveTo(x + 22, y); ctx.lineTo(x + w/2, y);
+  ctx.stroke();
+  ctx.fillStyle = col;
+  drawDiamond(ctx, x, y, 9);
+  drawDiamond(ctx, x - 38, y, 4);
+  drawDiamond(ctx, x + 38, y, 4);
+}
+
+function drawLeaf(ctx, x, y, length, angle, col) {
+  const a = angle * Math.PI / 180;
+  const perp = a + Math.PI/2;
+  const tx = x + Math.cos(a) * length;
+  const ty = y + Math.sin(a) * length;
+  const wd = Math.max(4, length/5);
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x + Math.cos(perp)*wd, y + Math.sin(perp)*wd);
+  ctx.quadraticCurveTo(
+    tx * 0.65 + x * 0.35, ty * 0.65 + y * 0.35,
+    tx, ty
+  );
+  ctx.quadraticCurveTo(
+    tx * 0.65 + x * 0.35, ty * 0.65 + y * 0.35,
+    x - Math.cos(perp)*wd, y - Math.sin(perp)*wd
+  );
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSprig(ctx, sx, sy, angle, length, colStem, colLeaf, n) {
+  const a = angle * Math.PI / 180;
+  ctx.strokeStyle = colStem;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.lineTo(sx + Math.cos(a) * length, sy + Math.sin(a) * length);
+  ctx.stroke();
+  for (let i = 1; i <= n; i++) {
+    const t = i / (n + 1);
+    const lx = sx + Math.cos(a) * length * t;
+    const ly = sy + Math.sin(a) * length * t;
+    const side = i % 2 === 0 ? 1 : -1;
+    drawLeaf(ctx, lx, ly, length * 0.20 * (1 - t*0.25), angle + side * 52, colLeaf);
+  }
+}
+
+function drawBloom(ctx, cx, cy, r, col, centerCol) {
+  ctx.fillStyle = col;
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 72 - 90) * Math.PI / 180;
+    const px = cx + Math.cos(a) * r * 0.58;
+    const py = cy + Math.sin(a) * r * 0.58;
+    ctx.beginPath();
+    ctx.arc(px, py, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = centerCol;
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(3, r/5), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBotanical(ctx, cx, cy, fx, fy, theme) {
+  // Main stems
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy); ctx.lineTo(cx + fx*170, cy + fy*150);
+  ctx.moveTo(cx, cy); ctx.lineTo(cx + fx*80, cy + fy*185);
+  ctx.stroke();
+  // Sprigs
+  drawSprig(ctx, cx + fx*40, cy + fy*42, -30*fx + 90*fy, 95, theme.accent, theme.accent2, 3);
+  drawSprig(ctx, cx + fx*90, cy + fy*95, 20*fx + 75*fy, 110, theme.accent, theme.accent2, 4);
+  drawSprig(ctx, cx + fx*35, cy + fy*115, -50*fx + 65*fy, 80, theme.accent, theme.accent2, 3);
+  // Blooms
+  const parchCol = theme.bg === '#FCF8EE' ? '#E6DAC0' : theme.accent2;
+  drawBloom(ctx, cx + fx*170, cy + fy*148, 20, parchCol, theme.gold);
+  drawBloom(ctx, cx + fx*78, cy + fy*184, 18, theme.accent2, theme.gold);
+  drawBloom(ctx, cx + fx*50, cy + fy*28, 14, parchCol, theme.gold);
+  // Extra leaves
+  drawLeaf(ctx, cx + fx*120, cy + fy*60, 58, -55*fx + 80*fy, theme.accent2);
+  drawLeaf(ctx, cx + fx*55, cy + fy*145, 52, -35*fx + 60*fy, theme.accent2);
+}
+
+// ════════════════════════════════════════════════════════════
+// DOWNLOAD
+// ════════════════════════════════════════════════════════════
+function downloadInvite() {
+  showLoading();
+  // Small timeout so loading shows
+  setTimeout(function() {
+    try {
+      const canvas = document.getElementById('invite-canvas');
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      const safe = (state.name1 + '-' + state.name2).replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase();
+      a.download = 'aeryn-invite-' + safe + '.png';
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      hideLoading();
+      showToast('Downloaded! Check your downloads folder.');
+    } catch (e) {
+      hideLoading();
+      showToast('Download failed — please try again');
+      console.error(e);
+    }
+  }, 250);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2800);
+}
+
+function showLoading() { document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
+// Wait for fonts to load before first render
+document.fonts.ready.then(function() {
+  checkAccess();
+});
+
+// Refresh days remaining every minute
+setInterval(function() {
+  if (expiresAt) updateDaysLeft();
+}, 60000);
+</script>
+</body>
+</html>
