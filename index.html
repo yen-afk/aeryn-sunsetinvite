@@ -253,6 +253,9 @@ html,body {
 </head>
 <body>
 
+<!-- Hidden text forces browser to download Alex Brush font immediately -->
+<div style="position:absolute;left:-9999px;top:-9999px;font-family:'Alex Brush',cursive;font-size:1px;opacity:0;pointer-events:none;" aria-hidden="true">.</div>
+
 <!-- ═══ ACCESS SCREENS ═══════════════════════ -->
 <div id="screen-checking" class="access-screen">
   <div class="access-card">
@@ -1096,9 +1099,33 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(function(){});
 }
 
-// Wait for fonts to load before first render
-document.fonts.ready.then(function() {
+// Force-load fonts that canvas uses (Canvas API doesn't auto-load like CSS does)
+async function preloadCanvasFonts() {
+  try {
+    await Promise.all([
+      document.fonts.load('230px "Alex Brush"'),
+      document.fonts.load('46px Lora'),
+      document.fonts.load('42px Lora'),
+      document.fonts.load('110px Lora'),
+      document.fonts.load('italic 150px Lora'),
+      document.fonts.load('italic 120px Lora'),
+    ]);
+  } catch (e) {
+    console.warn('Font preload issue:', e);
+  }
+}
+
+// Wait for fonts before first render
+document.fonts.ready.then(async function() {
+  await preloadCanvasFonts();
   checkAccess();
+});
+
+// If a draw happens before fonts finish loading, redraw once they're ready
+document.fonts.addEventListener('loadingdone', function() {
+  if (document.getElementById('editor').classList.contains('active')) {
+    drawInvite();
+  }
 });
 
 // Refresh days remaining every minute
