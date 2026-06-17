@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --cream: #FCF8EE;
@@ -845,84 +845,69 @@ function drawSunsetCoastal() {
 }
 
 function drawSunsetText(ctx, W, H, CX) {
-  // Names — large flowing italic script in cream, bottom-third
-  const names = (state.name1 || ' ') + ' & ' + (state.name2 || ' ');
+  const CREAM = '#FFFCF5';
+  const SHADOW = 'rgba(40, 25, 15, 0.7)';
 
-  ctx.save();
-  ctx.font = 'italic 150px Lora';
-  ctx.textBaseline = 'top';
-  const namesW = ctx.measureText(names).width;
-  const namesX = CX - namesW / 2;
-  const namesY = H * 0.66;
-  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(names, namesX + 5, namesY + 5);
-  ctx.fillStyle = '#FFFCF5';
-  ctx.fillText(names, namesX, namesY);
-  ctx.restore();
-
-  // Date row — 3 columns at the bottom, tighter spacing
+  // ── DATES — top section, right under SAVE the DATE ─────────
   // state.date1 = day of week | state.date2 = time | state.time = day number
   // state.venue = month | state.footer = year
-  const dateY = H * 0.84;
-  // Tighter column positions — closer to the centre number
-  const col1X = W * 0.34;   // was 0.30 — closer to centre
+  const dateY = H * 0.27;
+  const col1X = W * 0.34;
   const col2X = W * 0.50;
-  const col3X = W * 0.66;   // was 0.70 — closer to centre
+  const col3X = W * 0.66;
 
   ctx.save();
-  ctx.fillStyle = '#FFFCF5';
   ctx.textBaseline = 'top';
 
-  // Column 1: Day of week, Time (smaller font for balance)
-  ctx.font = '46px Lora';
-  let txt = state.date1 || ' ';
-  let tw = ctx.measureText(txt).width;
-  ctx.save();
-  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 3);
-  ctx.restore();
-  ctx.fillText(txt, col1X - tw/2, dateY);
+  // Helper for shadowed centered text
+  function drawCreamText(text, x, y, font) {
+    ctx.font = font;
+    const tw = ctx.measureText(text).width;
+    // Multi-offset shadow for better visibility
+    ctx.fillStyle = SHADOW;
+    ctx.fillText(text, x - tw/2 + 3, y + 3);
+    ctx.fillText(text, x - tw/2 - 1, y + 3);
+    ctx.fillText(text, x - tw/2 + 3, y - 1);
+    // Main text
+    ctx.fillStyle = CREAM;
+    ctx.fillText(text, x - tw/2, y);
+  }
 
-  txt = state.date2 || ' ';
-  tw = ctx.measureText(txt).width;
-  ctx.save();
-  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col1X - tw/2 + 3, dateY + 58);
-  ctx.restore();
-  ctx.fillText(txt, col1X - tw/2, dateY + 55);
+  // Col 1: Day/Time
+  drawCreamText(state.date1 || ' ', col1X, dateY, '46px Lora');
+  drawCreamText(state.date2 || ' ', col1X, dateY + 62, '46px Lora');
 
-  // Column 2: Day number (large)
-  ctx.font = '110px Lora';
-  txt = state.time || ' ';
-  tw = ctx.measureText(txt).width;
-  ctx.save();
-  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col2X - tw/2 + 4, dateY - 7);
-  ctx.restore();
-  ctx.fillText(txt, col2X - tw/2, dateY - 10);
+  // Col 2: Day number (large, centred against side stacks)
+  drawCreamText(state.time || ' ', col2X, dateY - 8, '110px Lora');
 
-  // Column 3: Month (spaced caps), Year
+  // Col 3: Month (spaced caps), Year
   drawSpacedText(ctx, (state.venue || ' ').toUpperCase(), col3X, dateY,
-    '42px Lora', '#FFFCF5', 3, true);
+    '42px Lora', CREAM, 3, true);
+  drawCreamText(state.footer || ' ', col3X, dateY + 62, '46px Lora');
 
-  ctx.font = '46px Lora';
-  txt = state.footer || ' ';
-  tw = ctx.measureText(txt).width;
-  ctx.save();
-  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
-  ctx.fillText(txt, col3X - tw/2 + 3, dateY + 58);
-  ctx.restore();
-  ctx.fillText(txt, col3X - tw/2, dateY + 55);
-
-  // Vertical dividers — close to the centre "10", not the side columns
-  ctx.strokeStyle = '#FFFCF5';
+  // Vertical dividers — cream with subtle transparency
+  ctx.strokeStyle = 'rgba(255, 252, 245, 0.85)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(col2X - 90, dateY + 5);
-  ctx.lineTo(col2X - 90, dateY + 100);
+  ctx.lineTo(col2X - 90, dateY + 110);
   ctx.moveTo(col2X + 90, dateY + 5);
-  ctx.lineTo(col2X + 90, dateY + 100);
+  ctx.lineTo(col2X + 90, dateY + 110);
   ctx.stroke();
+
+  // ── NAMES — Alex Brush script, bottom rocky landscape area ─
+  const names = (state.name1 || ' ') + ' & ' + (state.name2 || ' ');
+  ctx.font = '230px "Alex Brush"';
+  const namesW = ctx.measureText(names).width;
+  const namesX = CX - namesW / 2;
+  const namesY = H * 0.78;
+
+  // Strong layered shadow for legibility
+  ctx.fillStyle = 'rgba(40, 25, 15, 0.55)';
+  ctx.fillText(names, namesX + 5, namesY + 5);
+  ctx.fillText(names, namesX - 1, namesY + 5);
+  ctx.fillStyle = CREAM;
+  ctx.fillText(names, namesX, namesY);
 
   ctx.restore();
 }

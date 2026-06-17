@@ -1,4 +1,4 @@
-const CACHE = 'aeryn-invite-v4';
+const CACHE = 'aeryn-invite-v5';
 const ASSETS = ['/', '/index.html', '/generate.html', '/manifest.json',
                 '/favicon.ico', '/icons/icon-192.png', '/icons/icon-512.png',
                 '/sunset-bg.jpg'];
